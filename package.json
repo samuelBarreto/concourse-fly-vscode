@@ -9,7 +9,6 @@
   },
   "categories": ["Other"],
   "keywords": ["concourse", "ci", "cd", "fly", "pipeline"],
-  "icon": "resources/icons/concourse-icon.png",
   "activationEvents": [],
   "main": "./out/extension.js",
   "repository": {
