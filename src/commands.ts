@@ -1,6 +1,8 @@
 import * as vscode from "vscode";
+import * as path from "path";
 import * as fly from "./fly";
 import { addTeam, getTeams, removeTeam } from "./teams";
+import { getDeployHistory, saveDeployHistory } from "./deployHistory";
 import { PipelineTreeItem, JobTreeItem, BuildTreeItem, TeamTreeItem } from "./providers/treeView";
 
 export function registerCommands(
@@ -173,14 +175,23 @@ export function registerCommands(
       if (!picked) { return; }
 
       const filePath = editor.document.fileName;
+      const defaultName = path.basename(filePath, path.extname(filePath));
       const name = await vscode.window.showInputBox({
         prompt: "Pipeline name",
-        placeHolder: "my-pipeline",
+        placeHolder: defaultName,
+        value: defaultName,
       });
       if (!name) { return; }
 
       try {
         await fly.setPipeline(name, filePath, picked.team.target);
+        await saveDeployHistory(context, {
+          filePath,
+          pipelineName: name,
+          teamName: picked.team.name,
+          target: picked.team.target,
+          lastDeployed: Date.now(),
+        });
         vscode.window.showInformationMessage(`Pipeline '${name}' set on team '${picked.team.name}'`);
         refreshAll();
       } catch (error: any) {
@@ -236,6 +247,25 @@ export function registerCommands(
       if (!item) { return; }
       try {
         const yaml = await fly.getPipelineConfig(item.pipeline.name, item.target);
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+
+        if (workspaceFolders && workspaceFolders.length > 0) {
+          const fileName = `${item.pipeline.name}.yml`;
+          const defaultUri = vscode.Uri.joinPath(workspaceFolders[0].uri, fileName);
+          const saveUri = await vscode.window.showSaveDialog({
+            defaultUri,
+            filters: { "YAML": ["yml", "yaml"] },
+            title: `Save pipeline "${item.pipeline.name}"`,
+          });
+          if (saveUri) {
+            await vscode.workspace.fs.writeFile(saveUri, Buffer.from(yaml));
+            const doc = await vscode.workspace.openTextDocument(saveUri);
+            await vscode.window.showTextDocument(doc);
+            vscode.window.showInformationMessage(`Pipeline saved to ${vscode.workspace.asRelativePath(saveUri)}`);
+            return;
+          }
+        }
+
         const doc = await vscode.workspace.openTextDocument({ content: yaml, language: "yaml" });
         await vscode.window.showTextDocument(doc, { preview: true });
       } catch (error: any) {
@@ -247,6 +277,25 @@ export function registerCommands(
       if (!item) { return; }
       try {
         const yaml = await fly.getJobConfig(item.job.pipeline_name, item.job.name, item.target);
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+
+        if (workspaceFolders && workspaceFolders.length > 0) {
+          const fileName = `${item.job.pipeline_name}-${item.job.name}.yml`;
+          const defaultUri = vscode.Uri.joinPath(workspaceFolders[0].uri, fileName);
+          const saveUri = await vscode.window.showSaveDialog({
+            defaultUri,
+            filters: { "YAML": ["yml", "yaml"] },
+            title: `Save job "${item.job.pipeline_name}/${item.job.name}"`,
+          });
+          if (saveUri) {
+            await vscode.workspace.fs.writeFile(saveUri, Buffer.from(yaml));
+            const doc = await vscode.workspace.openTextDocument(saveUri);
+            await vscode.window.showTextDocument(doc);
+            vscode.window.showInformationMessage(`Job saved to ${vscode.workspace.asRelativePath(saveUri)}`);
+            return;
+          }
+        }
+
         const doc = await vscode.workspace.openTextDocument({ content: yaml, language: "yaml" });
         await vscode.window.showTextDocument(doc, { preview: true });
       } catch (error: any) {
@@ -268,6 +317,64 @@ export function registerCommands(
       const terminal = vscode.window.createTerminal(`Intercept ${item.job.pipeline_name}/${item.job.name}`);
       terminal.show();
       terminal.sendText(args.join(" "));
+    }),
+
+    vscode.commands.registerCommand("concourse.quickDeploy", async (document?: vscode.TextDocument) => {
+      const doc = document || vscode.window.activeTextEditor?.document;
+      if (!doc) { return; }
+
+      const history = getDeployHistory(context, doc.fileName);
+      if (!history) {
+        vscode.commands.executeCommand("concourse.setPipeline");
+        return;
+      }
+
+      const confirm = await vscode.window.showQuickPick(
+        ["Yes", "No"],
+        { placeHolder: `Deploy "${history.pipelineName}" to ${history.teamName} (${history.target})?` }
+      );
+      if (confirm !== "Yes") { return; }
+
+      try {
+        await fly.setPipeline(history.pipelineName, doc.fileName, history.target);
+        await saveDeployHistory(context, { ...history, lastDeployed: Date.now() });
+        vscode.window.showInformationMessage(`Pipeline '${history.pipelineName}' updated on ${history.teamName}`);
+        refreshAll();
+      } catch (error: any) {
+        vscode.window.showErrorMessage(`Deploy failed: ${error.message}`);
+      }
+    }),
+
+    vscode.commands.registerCommand("concourse.diffPipeline", async (document?: vscode.TextDocument) => {
+      const doc = document || vscode.window.activeTextEditor?.document;
+      if (!doc) { return; }
+
+      const history = getDeployHistory(context, doc.fileName);
+      if (!history) {
+        vscode.window.showWarningMessage("No deploy history for this file. Deploy it first.");
+        return;
+      }
+
+      try {
+        // Get current config from Concourse
+        const remoteYaml = await fly.getPipelineConfig(history.pipelineName, history.target);
+
+        // Create temp file with remote content
+        const remoteDoc = await vscode.workspace.openTextDocument({
+          content: remoteYaml,
+          language: "yaml",
+        });
+
+        // Show diff
+        await vscode.commands.executeCommand(
+          "vscode.diff",
+          remoteDoc.uri,
+          doc.uri,
+          `${history.pipelineName} (Concourse) ↔ ${path.basename(doc.fileName)} (Local)`
+        );
+      } catch (error: any) {
+        vscode.window.showErrorMessage(`Diff failed: ${error.message}`);
+      }
     }),
 
     vscode.commands.registerCommand("concourse.refresh", () => {

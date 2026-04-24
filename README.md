@@ -18,8 +18,6 @@ Pipelines
 │   └── my-app
 ├── 🏢 dev-team (ci)                [🚪 Logout]
 │   └── staging
-├── 🏢 ops (prod)                   [🚪 Logout]
-│   └── monitoring
 └── ➕ Add Team...
 
 Recent Builds
@@ -30,26 +28,51 @@ Recent Builds
     └── #3 staging/deploy ✅
 ```
 
-### 🔧 Sidebar Panel
+### � Smart Deploy with CodeLens
 
-Three views in the Concourse activity bar:
+YAML files that look like Concourse pipelines get inline CodeLens actions:
+
+**First deploy:**
+```yaml
+▶ Deploy "hello" to Concourse          ← picks team, uses filename as pipeline name
+
+jobs:
+- name: hello
+  ...
+```
+
+**After first deploy:**
+```yaml
+🚀 Deploy "hello" to main (ci)         ← one-click redeploy to same target
+📊 Diff with Concourse                  ← side-by-side diff (local vs remote)
+
+jobs:
+- name: hello
+  ...
+```
+
+- Pipeline name is auto-detected from the filename (`hello.yml` → `hello`)
+- Remembers the last team and target for each file
+- Diff shows what changed before you apply
+
+### 🔧 Sidebar Panel
 
 #### Pipelines
 
 | Action | Icon | Description |
 |--------|------|-------------|
-| View YAML | 👁 | Fetch and display the pipeline config |
+| View YAML | 👁 | Fetch and save pipeline config to workspace |
 | Pause | ⏸ | Pause a running pipeline |
 | Unpause | ▶ | Unpause a paused pipeline |
 | Logout | 🚪 | Remove team from sidebar |
 
-#### Jobs (inside each pipeline)
+#### Jobs
 
 | Action | Icon | Description |
 |--------|------|-------------|
 | Trigger | ▶ | Start the job |
 | Intercept | >_ | Open a shell inside the job's container |
-| View YAML | 👁 | View the job config in isolation |
+| View YAML | 👁 | Save job config to workspace |
 
 #### Recent Builds (grouped by team)
 
@@ -70,7 +93,7 @@ Three views in the Concourse activity bar:
 
 | Action | Icon | Description |
 |--------|------|-------------|
-| View | 📄 | Opens the YAML for editing |
+| View | 📄 | Save template to workspace |
 | Deploy | 🚀 | Select team, creates pipeline and unpauses it |
 
 ---
@@ -81,8 +104,6 @@ Three views in the Concourse activity bar:
 |--------|------|-------------|
 | Set Pipeline | YAML file is open | Select team and deploy |
 | New Template | Always visible | Open a pipeline template |
-
----
 
 ### 📊 Status Bar
 
@@ -108,23 +129,22 @@ Pipelines and builds refresh automatically every 30 seconds.
 1. Open Command Palette (`Ctrl+Shift+P`) → **Concourse: Login**
 2. Select the `fly` binary on your machine (first time only)
 3. Choose login method:
-   - **🌐 Browser login** — for OAuth/SSO authentication (opens browser)
+   - **🌐 Browser login** — for OAuth/SSO authentication
    - **🔑 Username & Password** — for local user credentials
-4. Enter your Concourse URL (e.g. `http://localhost:8080`)
-5. Enter a target name (e.g. `ci`)
+4. Enter your Concourse URL
+5. Enter a target name
 6. Choose TLS configuration:
    - **No** — default TLS verification
-   - **Yes (insecure, skip TLS verification)** — for self-signed certs or local dev
-7. If TLS is not skipped, optionally select a custom CA certificate (`.pem` / `.crt`)
-8. Enter team name (e.g. `main`, `dev-team`, `ops`)
-9. If using Username & Password, enter your credentials
+   - **Yes (insecure)** — skip TLS for self-signed certs
+7. Optionally select a custom CA certificate
+8. Enter team name
+9. Enter credentials (if using basic auth)
 
-Repeat for each team you want to manage.
+Repeat for each team.
 
 ### Removing a Team
 
-- Click the 🚪 logout icon next to the team name in the sidebar
-- Or: Command Palette → **Concourse: Logout** → select team
+Click 🚪 next to the team name, or Command Palette → **Concourse: Logout**.
 
 ### Manual Configuration
 
@@ -137,33 +157,28 @@ Repeat for each team you want to manage.
 }
 ```
 
-| Setting | Description | Default |
-|---------|-------------|---------|
-| `concourse.url` | Concourse URL | `""` |
-| `concourse.flyPath` | Path to fly binary | `"fly"` |
-| `concourse.skipTls` | Skip TLS verification | `false` |
-| `concourse.caCert` | Path to CA certificate | `""` |
-
 ---
 
 ## Commands
 
 | Command | Description |
 |---------|-------------|
-| `Concourse: Login` | Add a new team (browser or basic auth) |
+| `Concourse: Login` | Add a new team |
 | `Concourse: Logout` | Remove a team |
-| `Concourse: Set Pipeline` | Select team and deploy current YAML |
+| `Concourse: Set Pipeline` | Deploy current YAML (picks team, auto-names pipeline) |
+| `Concourse: Quick Deploy` | Redeploy to last used team (one click) |
+| `Concourse: Diff with Concourse` | Side-by-side diff of local vs remote pipeline |
 | `Concourse: Trigger Job` | Start a job |
 | `Concourse: Pause Pipeline` | Pause a pipeline |
 | `Concourse: Unpause Pipeline` | Unpause a pipeline |
-| `Concourse: View Build Logs` | Open build output in the editor |
-| `Concourse: View Pipeline YAML` | Fetch and display a pipeline's config |
-| `Concourse: View Job YAML` | Fetch and display a single job's config |
-| `Concourse: Intercept Build` | Open a shell inside a build's container |
-| `Concourse: Intercept Job` | Open a shell inside a job's container |
-| `Concourse: New Pipeline from Template` | Create a pipeline from a template |
-| `Concourse: Deploy Template` | Select team and deploy template |
-| `Concourse: Refresh` | Refresh all teams, pipelines and builds |
+| `Concourse: View Build Logs` | Open build output |
+| `Concourse: View Pipeline YAML` | Save pipeline config to workspace |
+| `Concourse: View Job YAML` | Save job config to workspace |
+| `Concourse: Intercept Build` | Shell into a build's container |
+| `Concourse: Intercept Job` | Shell into a job's container |
+| `Concourse: New Pipeline from Template` | Create from template |
+| `Concourse: Deploy Template` | Deploy template to a team |
+| `Concourse: Refresh` | Refresh all data |
 
 ---
 

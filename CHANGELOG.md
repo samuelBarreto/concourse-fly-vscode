@@ -2,6 +2,21 @@
 
 All notable changes to the Concourse Fly Integration extension.
 
+## [0.3.0] - 2026-04-24
+
+### Added
+- CodeLens on YAML files: "Deploy to Concourse" and "Diff with Concourse" inline actions
+- Quick Deploy: one-click redeploy to the last used team/target
+- Diff view: side-by-side comparison of local YAML vs what's on Concourse
+- Auto pipeline naming: uses the filename as pipeline name (`hello.yml` → `hello`)
+- Deploy history: remembers the last team and target for each file
+- View Pipeline/Job YAML now saves to workspace with proper filename
+- Templates now save to workspace via Save As dialog
+
+### Changed
+- Set Pipeline now pre-fills pipeline name from filename
+- CodeLens only appears on YAML files containing `jobs:` or `resources:`
+
 ## [0.2.0] - 2026-04-24
 
 ### Added

@@ -1,16 +1,25 @@
 import * as vscode from "vscode";
 import { PipelineProvider, BuildProvider } from "./providers/treeView";
 import { TemplateProvider, PipelineTemplate } from "./providers/templates";
+import { PipelineCodeLensProvider } from "./providers/codeLens";
 import { registerCommands } from "./commands";
 
 export function activate(context: vscode.ExtensionContext) {
   const pipelineProvider = new PipelineProvider(context);
   const buildProvider = new BuildProvider(context);
   const templateProvider = new TemplateProvider();
+  const codeLensProvider = new PipelineCodeLensProvider(context);
 
   vscode.window.registerTreeDataProvider("concoursePipelines", pipelineProvider);
   vscode.window.registerTreeDataProvider("concourseBuilds", buildProvider);
   vscode.window.registerTreeDataProvider("concourseTemplates", templateProvider);
+
+  context.subscriptions.push(
+    vscode.languages.registerCodeLensProvider(
+      { language: "yaml", scheme: "file" },
+      codeLensProvider
+    )
+  );
 
   const refreshAll = () => {
     pipelineProvider.refresh();
@@ -19,16 +28,38 @@ export function activate(context: vscode.ExtensionContext) {
 
   registerCommands(context, refreshAll);
 
-  // Apply template command
+  // Apply template command — saves to workspace
   context.subscriptions.push(
     vscode.commands.registerCommand("concourse.applyTemplate", async (template: PipelineTemplate) => {
-      const doc = await vscode.workspace.openTextDocument({
-        content: template.content,
-        language: "yaml",
+      const workspaceFolders = vscode.workspace.workspaceFolders;
+      if (!workspaceFolders || workspaceFolders.length === 0) {
+        const doc = await vscode.workspace.openTextDocument({
+          content: template.content,
+          language: "yaml",
+        });
+        await vscode.window.showTextDocument(doc);
+        vscode.window.showInformationMessage(
+          `Template "${template.name}" loaded. Save it to your project.`
+        );
+        return;
+      }
+
+      const fileName = template.name.toLowerCase().replace(/\s+/g, "-") + ".yml";
+      const defaultUri = vscode.Uri.joinPath(workspaceFolders[0].uri, fileName);
+
+      const saveUri = await vscode.window.showSaveDialog({
+        defaultUri,
+        filters: { "YAML": ["yml", "yaml"] },
+        title: `Save "${template.name}" template`,
       });
+
+      if (!saveUri) { return; }
+
+      await vscode.workspace.fs.writeFile(saveUri, Buffer.from(template.content));
+      const doc = await vscode.workspace.openTextDocument(saveUri);
       await vscode.window.showTextDocument(doc);
       vscode.window.showInformationMessage(
-        `Template "${template.name}" loaded. Save as pipeline.yml and use "Concourse: Set Pipeline" to deploy.`
+        `Template saved to ${vscode.workspace.asRelativePath(saveUri)}`
       );
     })
   );

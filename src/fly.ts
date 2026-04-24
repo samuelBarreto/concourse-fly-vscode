@@ -185,3 +185,15 @@ export function interceptJob(pipelineName: string, jobName: string, target: stri
   const flyPath = getFlyPath();
   return [flyPath, "-t", target, "intercept", "-j", `${pipelineName}/${jobName}`];
 }
+
+export async function diffPipeline(pipelineName: string, configPath: string, target: string): Promise<string> {
+  try {
+    return await exec(["set-pipeline", "-p", pipelineName, "-c", configPath, "--diff", "--check-creds"], target);
+  } catch (error: any) {
+    // fly set-pipeline --diff returns exit code 1 when there are changes
+    if (error.message) {
+      return error.message;
+    }
+    throw error;
+  }
+}
