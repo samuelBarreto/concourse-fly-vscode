@@ -1,9 +1,23 @@
 import * as vscode from "vscode";
 import * as fly from "../fly";
+import { TeamConfig, getTeams } from "../teams";
 
+// Team node (top level)
+export class TeamTreeItem extends vscode.TreeItem {
+  constructor(public readonly team: TeamConfig) {
+    super(team.name, vscode.TreeItemCollapsibleState.Collapsed);
+    this.tooltip = `Target: ${team.target} | Team: ${team.name}`;
+    this.description = team.target;
+    this.contextValue = "team";
+    this.iconPath = new vscode.ThemeIcon("organization");
+  }
+}
+
+// Pipeline node (under team)
 export class PipelineTreeItem extends vscode.TreeItem {
   constructor(
     public readonly pipeline: fly.Pipeline,
+    public readonly target: string,
     public readonly collapsibleState: vscode.TreeItemCollapsibleState
   ) {
     super(pipeline.name, collapsibleState);
@@ -18,8 +32,9 @@ export class PipelineTreeItem extends vscode.TreeItem {
   }
 }
 
+// Job node (under pipeline)
 export class JobTreeItem extends vscode.TreeItem {
-  constructor(public readonly job: fly.Job) {
+  constructor(public readonly job: fly.Job, public readonly target: string) {
     super(job.name, vscode.TreeItemCollapsibleState.None);
     this.contextValue = "job";
 
@@ -38,9 +53,12 @@ export class JobTreeItem extends vscode.TreeItem {
   }
 }
 
+// Pipeline provider with team grouping
 export class PipelineProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
   private _onDidChangeTreeData = new vscode.EventEmitter<vscode.TreeItem | undefined>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
+
+  constructor(private context: vscode.ExtensionContext) {}
 
   refresh(): void {
     this._onDidChangeTreeData.fire(undefined);
@@ -51,33 +69,52 @@ export class PipelineProvider implements vscode.TreeDataProvider<vscode.TreeItem
   }
 
   async getChildren(element?: vscode.TreeItem): Promise<vscode.TreeItem[]> {
-    const target = vscode.workspace.getConfiguration("concourse").get("target", "");
-    if (!target) {
-      return [new vscode.TreeItem("Set concourse.target in settings")];
+    const teams = getTeams(this.context);
+
+    if (!element) {
+      // Top level: show teams + "Add Team" item
+      if (teams.length === 0) {
+        const addItem = new vscode.TreeItem("Add Team...", vscode.TreeItemCollapsibleState.None);
+        addItem.command = { command: "concourse.login", title: "Add Team" };
+        addItem.iconPath = new vscode.ThemeIcon("add");
+        return [addItem];
+      }
+      const items: vscode.TreeItem[] = teams.map((t) => new TeamTreeItem(t));
+      const addItem = new vscode.TreeItem("Add Team...", vscode.TreeItemCollapsibleState.None);
+      addItem.command = { command: "concourse.login", title: "Add Team" };
+      addItem.iconPath = new vscode.ThemeIcon("add");
+      items.push(addItem);
+      return items;
     }
 
-    try {
-      if (!element) {
-        const pipelines = await fly.getPipelines();
-        return pipelines.map(
-          (p) => new PipelineTreeItem(p, vscode.TreeItemCollapsibleState.Collapsed)
+    if (element instanceof TeamTreeItem) {
+      try {
+        const pipelines = await fly.getPipelines(element.team.target);
+        const teamPipelines = pipelines.filter((p) => p.team_name === element.team.name);
+        return teamPipelines.map(
+          (p) => new PipelineTreeItem(p, element.team.target, vscode.TreeItemCollapsibleState.Collapsed)
         );
+      } catch (error: any) {
+        return [new vscode.TreeItem(`Error: ${error.message}`)];
       }
+    }
 
-      if (element instanceof PipelineTreeItem) {
-        const jobs = await fly.getJobs(element.pipeline.name);
-        return jobs.map((j) => new JobTreeItem(j));
+    if (element instanceof PipelineTreeItem) {
+      try {
+        const jobs = await fly.getJobs(element.pipeline.name, element.target);
+        return jobs.map((j) => new JobTreeItem(j, element.target));
+      } catch (error: any) {
+        return [new vscode.TreeItem(`Error: ${error.message}`)];
       }
-    } catch (error: any) {
-      return [new vscode.TreeItem(`Error: ${error.message}`)];
     }
 
     return [];
   }
 }
 
+// Build tree item
 export class BuildTreeItem extends vscode.TreeItem {
-  constructor(public readonly build: fly.Build) {
+  constructor(public readonly build: fly.Build, public readonly target: string) {
     super(
       `#${build.name} ${build.pipeline_name}/${build.job_name}`,
       vscode.TreeItemCollapsibleState.None
@@ -99,9 +136,22 @@ export class BuildTreeItem extends vscode.TreeItem {
   }
 }
 
+// Team node for builds
+export class BuildTeamTreeItem extends vscode.TreeItem {
+  constructor(public readonly team: TeamConfig) {
+    super(team.name, vscode.TreeItemCollapsibleState.Collapsed);
+    this.description = team.target;
+    this.contextValue = "build-team";
+    this.iconPath = new vscode.ThemeIcon("organization");
+  }
+}
+
+// Build provider with team grouping
 export class BuildProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
   private _onDidChangeTreeData = new vscode.EventEmitter<vscode.TreeItem | undefined>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
+
+  constructor(private context: vscode.ExtensionContext) {}
 
   refresh(): void {
     this._onDidChangeTreeData.fire(undefined);
@@ -111,17 +161,24 @@ export class BuildProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
     return element;
   }
 
-  async getChildren(): Promise<vscode.TreeItem[]> {
-    const target = vscode.workspace.getConfiguration("concourse").get("target", "");
-    if (!target) {
-      return [];
+  async getChildren(element?: vscode.TreeItem): Promise<vscode.TreeItem[]> {
+    const teams = getTeams(this.context);
+
+    if (!element) {
+      if (teams.length === 0) { return []; }
+      return teams.map((t) => new BuildTeamTreeItem(t));
     }
 
-    try {
-      const builds = await fly.getBuilds(25);
-      return builds.map((b) => new BuildTreeItem(b));
-    } catch {
-      return [new vscode.TreeItem("Failed to fetch builds")];
+    if (element instanceof BuildTeamTreeItem) {
+      try {
+        const builds = await fly.getBuilds(element.team.target, 25);
+        const teamBuilds = builds.filter((b) => b.team_name === element.team.name);
+        return teamBuilds.map((b) => new BuildTreeItem(b, element.team.target));
+      } catch {
+        return [new vscode.TreeItem("Failed to fetch builds")];
+      }
     }
+
+    return [];
   }
 }

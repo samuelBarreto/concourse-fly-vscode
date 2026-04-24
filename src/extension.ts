@@ -4,8 +4,8 @@ import { TemplateProvider, PipelineTemplate } from "./providers/templates";
 import { registerCommands } from "./commands";
 
 export function activate(context: vscode.ExtensionContext) {
-  const pipelineProvider = new PipelineProvider();
-  const buildProvider = new BuildProvider();
+  const pipelineProvider = new PipelineProvider(context);
+  const buildProvider = new BuildProvider(context);
   const templateProvider = new TemplateProvider();
 
   vscode.window.registerTreeDataProvider("concoursePipelines", pipelineProvider);
@@ -19,7 +19,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   registerCommands(context, refreshAll);
 
-  // Apply template command — opens a new YAML file with the template content
+  // Apply template command
   context.subscriptions.push(
     vscode.commands.registerCommand("concourse.applyTemplate", async (template: PipelineTemplate) => {
       const doc = await vscode.workspace.openTextDocument({
@@ -33,11 +33,24 @@ export function activate(context: vscode.ExtensionContext) {
     })
   );
 
-  // Deploy template command — saves to temp file and runs set-pipeline
+  // Deploy template command
   context.subscriptions.push(
     vscode.commands.registerCommand("concourse.deployTemplate", async (item: any) => {
       const template: PipelineTemplate = item?.template;
       if (!template) { return; }
+
+      const { getTeams } = await import("./teams");
+      const teams = getTeams(context);
+      if (teams.length === 0) {
+        vscode.window.showWarningMessage("Login to a team first");
+        return;
+      }
+
+      const pickedTeam = await vscode.window.showQuickPick(
+        teams.map((t) => ({ label: `${t.name} (${t.target})`, team: t })),
+        { placeHolder: "Select team to deploy to" }
+      );
+      if (!pickedTeam) { return; }
 
       const name = await vscode.window.showInputBox({
         prompt: "Pipeline name",
@@ -54,9 +67,9 @@ export function activate(context: vscode.ExtensionContext) {
 
       try {
         const fly = await import("./fly");
-        await fly.setPipeline(name, tmpFile);
-        await fly.unpausePipeline(name);
-        vscode.window.showInformationMessage(`Pipeline "${name}" deployed and unpaused!`);
+        await fly.setPipeline(name, tmpFile, pickedTeam.team.target);
+        await fly.unpausePipeline(name, pickedTeam.team.target);
+        vscode.window.showInformationMessage(`Pipeline "${name}" deployed to team '${pickedTeam.team.name}'!`);
         refreshAll();
       } catch (error: any) {
         vscode.window.showErrorMessage(`Deploy failed: ${error.message}`);
@@ -70,19 +83,19 @@ export function activate(context: vscode.ExtensionContext) {
   const interval = setInterval(refreshAll, 30000);
   context.subscriptions.push({ dispose: () => clearInterval(interval) });
 
-  // Status bar item showing the current target
+  // Status bar
   const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 0);
   statusBar.command = "concourse.login";
 
   function updateStatusBar() {
-    const target = vscode.workspace.getConfiguration("concourse").get("target", "");
-    if (target) {
-      statusBar.text = `$(cloud) Concourse: ${target}`;
-      statusBar.show();
+    const { getTeams } = require("./teams");
+    const teams = getTeams(context);
+    if (teams.length > 0) {
+      statusBar.text = `$(cloud) Concourse: ${teams.length} team(s)`;
     } else {
-      statusBar.text = "$(cloud) Concourse: not configured";
-      statusBar.show();
+      statusBar.text = "$(cloud) Concourse: not connected";
     }
+    statusBar.show();
   }
 
   updateStatusBar();
@@ -92,6 +105,13 @@ export function activate(context: vscode.ExtensionContext) {
       refreshAll();
     }
   });
+
+  // Refresh status bar when teams change
+  const originalRefresh = refreshAll;
+  const refreshWithStatus = () => {
+    originalRefresh();
+    updateStatusBar();
+  };
 
   context.subscriptions.push(statusBar);
 }

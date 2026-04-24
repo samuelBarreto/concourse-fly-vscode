@@ -2,6 +2,28 @@
 
 All notable changes to the Concourse Fly Integration extension.
 
+## [0.2.0] - 2026-04-24
+
+### Added
+- Multi-team support: login to N teams across different Concourse instances
+- Pipelines grouped by team in the sidebar
+- Recent Builds grouped by team
+- "Add Team..." button in the Pipelines panel
+- Logout per team (inline button or command palette picker)
+- Deploy template now asks which team to deploy to
+- Set Pipeline now asks which team to deploy to
+- Status bar shows number of connected teams
+- Teams persisted in extension global state
+
+### Changed
+- All fly commands now route through the correct target per team
+- Login flow always asks for target name (supports multiple targets)
+- Logout shows team picker when multiple teams are connected
+
+### Breaking
+- Previous single-target configuration replaced by multi-team model
+- Teams need to be re-added after updating to this version
+
 ## [0.1.6] - 2026-04-23
 
 ### Added

@@ -28,23 +28,23 @@ export interface Build {
   end_time?: number;
 }
 
-function getFlyPath(): string {
+export function getFlyPath(): string {
   return vscode.workspace.getConfiguration("concourse").get("flyPath", "fly");
 }
 
-function getTarget(): string {
+export function getTarget(): string {
   return vscode.workspace.getConfiguration("concourse").get("target", "");
 }
 
-function exec(args: string[]): Promise<string> {
+export function exec(args: string[], target?: string): Promise<string> {
   const flyPath = getFlyPath();
-  const target = getTarget();
+  const t = target || getTarget();
 
-  if (!target) {
-    throw new Error("No Concourse target configured. Set concourse.target in settings.");
+  if (!t) {
+    throw new Error("No Concourse target configured.");
   }
 
-  const fullArgs = ["-t", target, ...args];
+  const fullArgs = ["-t", t, ...args];
 
   return new Promise((resolve, reject) => {
     execFile(flyPath, fullArgs, { maxBuffer: 10 * 1024 * 1024 }, (error: Error | null, stdout: string, stderr: string) => {
@@ -57,9 +57,8 @@ function exec(args: string[]): Promise<string> {
   });
 }
 
-export async function login(url: string, username: string, password: string, skipTls?: boolean, caCert?: string, team?: string): Promise<string> {
+export async function login(url: string, username: string, password: string, target: string, skipTls?: boolean, caCert?: string, team?: string): Promise<string> {
   const flyPath = getFlyPath();
-  const target = getTarget();
 
   const args = ["-t", target, "login", "-c", url, "-u", username, "-p", password];
   if (skipTls) {
@@ -87,9 +86,8 @@ export async function login(url: string, username: string, password: string, ski
   });
 }
 
-export function loginBrowserArgs(url: string, skipTls?: boolean, caCert?: string, team?: string): string[] {
+export function loginBrowserArgs(url: string, target: string, skipTls?: boolean, caCert?: string, team?: string): string[] {
   const flyPath = getFlyPath();
-  const target = getTarget();
   const args = [flyPath, "-t", target, "login", "-c", url];
   if (skipTls) {
     args.push("-k", "--insecure");
@@ -103,57 +101,56 @@ export function loginBrowserArgs(url: string, skipTls?: boolean, caCert?: string
   return args;
 }
 
-export async function logout(): Promise<string> {
-  return exec(["logout"]);
+export async function logout(target: string): Promise<string> {
+  return exec(["logout"], target);
 }
 
-export async function getPipelines(): Promise<Pipeline[]> {
-  const output = await exec(["pipelines", "--json"]);
+export async function getPipelines(target: string): Promise<Pipeline[]> {
+  const output = await exec(["pipelines", "--json"], target);
   return JSON.parse(output);
 }
 
-export async function getJobs(pipelineName: string): Promise<Job[]> {
-  const output = await exec(["jobs", "-p", pipelineName, "--json"]);
+export async function getJobs(pipelineName: string, target: string): Promise<Job[]> {
+  const output = await exec(["jobs", "-p", pipelineName, "--json"], target);
   return JSON.parse(output);
 }
 
-export async function getBuilds(count: number = 25): Promise<Build[]> {
-  const output = await exec(["builds", "--json", "-c", count.toString()]);
+export async function getBuilds(target: string, count: number = 25): Promise<Build[]> {
+  const output = await exec(["builds", "--json", "-c", count.toString()], target);
   return JSON.parse(output);
 }
 
-export async function triggerJob(pipelineName: string, jobName: string): Promise<string> {
-  return exec(["trigger-job", "-j", `${pipelineName}/${jobName}`]);
+export async function triggerJob(pipelineName: string, jobName: string, target: string): Promise<string> {
+  return exec(["trigger-job", "-j", `${pipelineName}/${jobName}`], target);
 }
 
-export async function setPipeline(pipelineName: string, configPath: string): Promise<string> {
-  return exec(["set-pipeline", "-p", pipelineName, "-c", configPath, "--non-interactive"]);
+export async function setPipeline(pipelineName: string, configPath: string, target: string): Promise<string> {
+  return exec(["set-pipeline", "-p", pipelineName, "-c", configPath, "--non-interactive"], target);
 }
 
-export async function unpausePipeline(pipelineName: string): Promise<string> {
-  return exec(["unpause-pipeline", "-p", pipelineName]);
+export async function unpausePipeline(pipelineName: string, target: string): Promise<string> {
+  return exec(["unpause-pipeline", "-p", pipelineName], target);
 }
 
-export async function pausePipeline(pipelineName: string): Promise<string> {
-  return exec(["pause-pipeline", "-p", pipelineName]);
+export async function pausePipeline(pipelineName: string, target: string): Promise<string> {
+  return exec(["pause-pipeline", "-p", pipelineName], target);
 }
 
-export async function getBuildLogs(buildId: number): Promise<string> {
-  return exec(["watch", "-b", buildId.toString()]);
+export async function getBuildLogs(buildId: number, target: string): Promise<string> {
+  return exec(["watch", "-b", buildId.toString()], target);
 }
 
-export async function getPipelineConfig(pipelineName: string): Promise<string> {
-  return exec(["get-pipeline", "-p", pipelineName]);
+export async function getPipelineConfig(pipelineName: string, target: string): Promise<string> {
+  return exec(["get-pipeline", "-p", pipelineName], target);
 }
 
-export async function getJobConfig(pipelineName: string, jobName: string): Promise<string> {
-  const output = await exec(["get-pipeline", "-p", pipelineName, "--json"]);
+export async function getJobConfig(pipelineName: string, jobName: string, target: string): Promise<string> {
+  const output = await exec(["get-pipeline", "-p", pipelineName, "--json"], target);
   const pipeline = JSON.parse(output);
   const job = pipeline.jobs?.find((j: any) => j.name === jobName);
   if (!job) {
     throw new Error(`Job '${jobName}' not found in pipeline '${pipelineName}'`);
   }
-  // Convert back to YAML-like format
   return jsonToYaml(job, 0);
 }
 
@@ -179,18 +176,12 @@ function jsonToYaml(obj: any, indent: number): string {
   }).join("\n");
 }
 
-export function interceptBuild(buildId: number): string[] {
+export function interceptBuild(buildId: number, target: string): string[] {
   const flyPath = getFlyPath();
-  const target = getTarget();
   return [flyPath, "-t", target, "intercept", "-b", buildId.toString()];
 }
 
-export function interceptJob(pipelineName: string, jobName: string, stepName?: string): string[] {
+export function interceptJob(pipelineName: string, jobName: string, target: string): string[] {
   const flyPath = getFlyPath();
-  const target = getTarget();
-  const args = [flyPath, "-t", target, "intercept", "-j", `${pipelineName}/${jobName}`];
-  if (stepName) {
-    args.push("-s", stepName);
-  }
-  return args;
+  return [flyPath, "-t", target, "intercept", "-j", `${pipelineName}/${jobName}`];
 }
