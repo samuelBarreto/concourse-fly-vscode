@@ -1,0 +1,229 @@
+{
+  "name": "concourse-fly",
+  "displayName": "Concourse Fly Integration",
+  "description": "Manage Concourse CI pipelines, jobs and builds from VS Code",
+  "version": "0.1.0",
+  "publisher": "SamuelAndrade",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Other"],
+  "keywords": ["concourse", "ci", "cd", "fly", "pipeline"],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/samuelBarreto/concourse-fly-vscode"
+  },
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "concourse",
+          "title": "Concourse",
+          "icon": "resources/icons/concourse.svg"
+        }
+      ]
+    },
+    "views": {
+      "concourse": [
+        {
+          "id": "concoursePipelines",
+          "name": "Pipelines"
+        },
+        {
+          "id": "concourseBuilds",
+          "name": "Recent Builds"
+        },
+        {
+          "id": "concourseTemplates",
+          "name": "Templates"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "concourse.login",
+        "title": "Concourse: Login",
+        "icon": "$(sign-in)"
+      },
+      {
+        "command": "concourse.setPipeline",
+        "title": "Concourse: Set Pipeline",
+        "icon": "$(cloud-upload)"
+      },
+      {
+        "command": "concourse.triggerJob",
+        "title": "Concourse: Trigger Job",
+        "icon": "$(play)"
+      },
+      {
+        "command": "concourse.unpausePipeline",
+        "title": "Concourse: Unpause Pipeline",
+        "icon": "$(debug-start)"
+      },
+      {
+        "command": "concourse.pausePipeline",
+        "title": "Concourse: Pause Pipeline",
+        "icon": "$(debug-pause)"
+      },
+      {
+        "command": "concourse.refresh",
+        "title": "Concourse: Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "concourse.viewBuildLogs",
+        "title": "Concourse: View Build Logs",
+        "icon": "$(output)"
+      },
+      {
+        "command": "concourse.newPipeline",
+        "title": "Concourse: New Pipeline from Template",
+        "icon": "$(new-file)"
+      },
+      {
+        "command": "concourse.applyTemplate",
+        "title": "Concourse: Apply Template",
+        "icon": "$(new-file)"
+      },
+      {
+        "command": "concourse.deployTemplate",
+        "title": "Concourse: Deploy Template to Concourse",
+        "icon": "$(rocket)"
+      },
+      {
+        "command": "concourse.viewPipelineYaml",
+        "title": "Concourse: View Pipeline YAML",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "concourse.interceptBuild",
+        "title": "Concourse: Intercept Build (shell into container)",
+        "icon": "$(terminal)"
+      },
+      {
+        "command": "concourse.interceptJob",
+        "title": "Concourse: Intercept Job (shell into container)",
+        "icon": "$(terminal)"
+      },
+      {
+        "command": "concourse.viewJobYaml",
+        "title": "Concourse: View Job YAML",
+        "icon": "$(eye)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "concourse.refresh",
+          "when": "view == concoursePipelines",
+          "group": "navigation"
+        },
+        {
+          "command": "concourse.login",
+          "when": "view == concoursePipelines",
+          "group": "navigation"
+        },
+        {
+          "command": "concourse.newPipeline",
+          "when": "view == concourseTemplates",
+          "group": "navigation"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "concourse.setPipeline",
+          "when": "resourceLangId == yaml",
+          "group": "navigation"
+        },
+        {
+          "command": "concourse.newPipeline",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "concourse.triggerJob",
+          "when": "viewItem == job",
+          "group": "inline"
+        },
+        {
+          "command": "concourse.interceptJob",
+          "when": "viewItem == job",
+          "group": "inline"
+        },
+        {
+          "command": "concourse.viewJobYaml",
+          "when": "viewItem == job",
+          "group": "inline"
+        },
+        {
+          "command": "concourse.unpausePipeline",
+          "when": "viewItem == pipeline-paused",
+          "group": "inline"
+        },
+        {
+          "command": "concourse.pausePipeline",
+          "when": "viewItem == pipeline-active",
+          "group": "inline"
+        },
+        {
+          "command": "concourse.viewPipelineYaml",
+          "when": "viewItem == pipeline-paused || viewItem == pipeline-active",
+          "group": "inline"
+        },
+        {
+          "command": "concourse.viewBuildLogs",
+          "when": "viewItem == build",
+          "group": "inline"
+        },
+        {
+          "command": "concourse.interceptBuild",
+          "when": "viewItem == build",
+          "group": "inline"
+        },
+        {
+          "command": "concourse.newPipeline",
+          "when": "viewItem == template",
+          "group": "inline"
+        },
+        {
+          "command": "concourse.deployTemplate",
+          "when": "viewItem == template",
+          "group": "inline"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Concourse Fly",
+      "properties": {
+        "concourse.target": {
+          "type": "string",
+          "default": "",
+          "description": "Fly target name (from fly login -t <target>)"
+        },
+        "concourse.url": {
+          "type": "string",
+          "default": "",
+          "description": "Concourse URL (e.g. http://localhost:8080)"
+        },
+        "concourse.flyPath": {
+          "type": "string",
+          "default": "fly",
+          "description": "Path to fly binary"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.3.0"
+  }
+}
