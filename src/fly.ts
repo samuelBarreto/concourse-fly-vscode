@@ -84,6 +84,19 @@ export async function login(url: string, username: string, password: string, ski
   });
 }
 
+export function loginBrowserArgs(url: string, skipTls?: boolean, caCert?: string): string[] {
+  const flyPath = getFlyPath();
+  const target = getTarget();
+  const args = [flyPath, "-t", target, "login", "-c", url];
+  if (skipTls) {
+    args.push("-k", "--insecure");
+  }
+  if (caCert) {
+    args.push("--ca-cert", caCert);
+  }
+  return args;
+}
+
 export async function getPipelines(): Promise<Pipeline[]> {
   const output = await exec(["pipelines", "--json"]);
   return JSON.parse(output);

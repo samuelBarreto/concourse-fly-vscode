@@ -10,6 +10,7 @@ export function registerCommands(
     vscode.commands.registerCommand("concourse.login", async () => {
       const config = vscode.workspace.getConfiguration("concourse");
 
+      // 1. Select fly binary
       let flyPath = config.get<string>("flyPath", "fly");
       if (flyPath === "fly") {
         const picked = await vscode.window.showOpenDialog({
@@ -27,6 +28,18 @@ export function registerCommands(
         }
       }
 
+      // 2. Login method
+      const loginMethod = await vscode.window.showQuickPick(
+        [
+          { label: "$(globe) Browser login", description: "Opens browser for OAuth/SSO authentication", value: "browser" },
+          { label: "$(key) Username & Password", description: "Login with local user credentials", value: "basic" },
+        ],
+        { placeHolder: "How do you want to log in?" }
+      );
+
+      if (!loginMethod) { return; }
+
+      // 3. Concourse URL
       let url = config.get<string>("url", "");
       if (!url) {
         url = await vscode.window.showInputBox({
@@ -37,6 +50,7 @@ export function registerCommands(
         await config.update("url", url, vscode.ConfigurationTarget.Global);
       }
 
+      // 4. Target name
       let target = config.get<string>("target", "");
       if (!target) {
         target = await vscode.window.showInputBox({
@@ -47,11 +61,7 @@ export function registerCommands(
         await config.update("target", target, vscode.ConfigurationTarget.Global);
       }
 
-      const username = await vscode.window.showInputBox({ prompt: "Username" }) || "";
-      const password = await vscode.window.showInputBox({ prompt: "Password", password: true }) || "";
-
-      if (!username || !password) { return; }
-
+      // 5. TLS config
       const tlsOption = await vscode.window.showQuickPick(
         ["No", "Yes (insecure, skip TLS verification)"],
         { placeHolder: "Skip TLS verification?" }
@@ -82,12 +92,28 @@ export function registerCommands(
         }
       }
 
-      try {
-        await fly.login(url, username, password, skipTls, caCert);
-        vscode.window.showInformationMessage(`Logged in to ${url} as ${username}`);
-        refreshAll();
-      } catch (error: any) {
-        vscode.window.showErrorMessage(`Login failed: ${error.message}`);
+      // 6. Execute login
+      if (loginMethod.value === "browser") {
+        const args = fly.loginBrowserArgs(url, skipTls, caCert);
+        const terminal = vscode.window.createTerminal("Concourse Login");
+        terminal.show();
+        terminal.sendText(args.join(" "));
+        vscode.window.showInformationMessage("Complete the login in your browser, then the terminal will confirm.");
+        // Refresh after a delay to give time for browser login
+        setTimeout(refreshAll, 10000);
+      } else {
+        const username = await vscode.window.showInputBox({ prompt: "Username" }) || "";
+        const password = await vscode.window.showInputBox({ prompt: "Password", password: true }) || "";
+
+        if (!username || !password) { return; }
+
+        try {
+          await fly.login(url, username, password, skipTls, caCert);
+          vscode.window.showInformationMessage(`Logged in to ${url} as ${username}`);
+          refreshAll();
+        } catch (error: any) {
+          vscode.window.showErrorMessage(`Login failed: ${error.message}`);
+        }
       }
     }),
 

@@ -86,14 +86,17 @@ Pipelines and builds refresh automatically every 30 seconds.
 ### Interactive Login
 
 1. Open Command Palette (`Ctrl+Shift+P`) → **Concourse: Login**
-2. Select the `fly` binary on your machine
-3. Enter your Concourse URL (e.g. `http://localhost:8080`)
-4. Enter a target name (e.g. `ci`)
-5. Enter username and password
+2. Select the `fly` binary on your machine (first time only)
+3. Choose login method:
+   - **🌐 Browser login** — for OAuth/SSO authentication (opens browser)
+   - **🔑 Username & Password** — for local user credentials
+4. Enter your Concourse URL (e.g. `http://localhost:8080`)
+5. Enter a target name (e.g. `ci`)
 6. Choose TLS configuration:
    - **No** — default TLS verification
    - **Yes (insecure, skip TLS verification)** — for self-signed certs or local dev (`-k --insecure`)
 7. If TLS is not skipped, optionally select a custom CA certificate (`.pem` / `.crt`)
+8. If using Username & Password, enter your credentials
 
 ### Manual Configuration
 
