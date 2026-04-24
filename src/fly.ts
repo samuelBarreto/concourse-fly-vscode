@@ -57,14 +57,22 @@ function exec(args: string[]): Promise<string> {
   });
 }
 
-export async function login(url: string, username: string, password: string): Promise<string> {
+export async function login(url: string, username: string, password: string, skipTls?: boolean, caCert?: string): Promise<string> {
   const flyPath = getFlyPath();
   const target = getTarget();
+
+  const args = ["-t", target, "login", "-c", url, "-u", username, "-p", password];
+  if (skipTls) {
+    args.push("-k");
+  }
+  if (caCert) {
+    args.push("--ca-cert", caCert);
+  }
 
   return new Promise((resolve, reject) => {
     execFile(
       flyPath,
-      ["-t", target, "login", "-c", url, "-u", username, "-p", password],
+      args,
       (error: Error | null, stdout: string, stderr: string) => {
         if (error) {
           reject(new Error(stderr || error.message));

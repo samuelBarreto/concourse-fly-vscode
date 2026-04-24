@@ -1,75 +1,128 @@
-# Concourse Fly Integration for VS Code
+# Concourse Fly Integration
 
-Manage Concourse CI pipelines, jobs and builds directly from VS Code.
+Manage Concourse CI directly from VS Code. Browse pipelines and jobs, trigger builds, view logs, intercept containers, deploy pipeline templates — all without leaving your editor. Powered by the fly CLI.
+
+---
 
 ## Features
 
-### Sidebar Panel
+### 🔧 Sidebar Panel
 
 Three views in the Concourse activity bar:
 
-**Pipelines** — browse all pipelines and their jobs
-- View pipeline YAML (eye icon)
-- Pause / Unpause pipelines
-- Trigger jobs
-- View job YAML config
-- Intercept job containers (open shell)
+#### Pipelines
+Browse all pipelines and their jobs with inline actions:
 
-**Recent Builds** — last 25 builds across all pipelines
-- View build logs
-- Intercept build containers (open shell)
+| Action | Icon | Description |
+|--------|------|-------------|
+| View YAML | 👁 | Fetch and display the pipeline config |
+| Pause | ⏸ | Pause a running pipeline |
+| Unpause | ▶ | Unpause a paused pipeline |
 
-**Templates** — ready-to-use pipeline templates
-- Hello World — simple job that prints hello world
-- Git Resource — clone a repo and run tests
-- Time Triggered — job that runs on a schedule
-- Docker Build — build and push a Docker image
-- Multi-Job Pipeline — build, test and deploy stages
+#### Jobs (inside each pipeline)
+
+| Action | Icon | Description |
+|--------|------|-------------|
+| Trigger | ▶ | Start the job |
+| Intercept | >_ | Open a shell inside the job's container |
+| View YAML | 👁 | View the job config in isolation |
+
+#### Recent Builds
+Last 25 builds across all pipelines:
+
+| Action | Icon | Description |
+|--------|------|-------------|
+| View Logs | 📋 | Open build output in the editor |
+| Intercept | >_ | Open a shell inside the build's container |
+
+#### Templates
+Ready-to-use pipeline templates:
+
+| Template | Description |
+|----------|-------------|
+| Hello World | Simple job that prints hello world |
+| Git Resource | Clone a repo and run tests |
+| Time Triggered | Job that runs on a schedule |
+| Docker Build | Build and push a Docker image |
+| Multi-Job Pipeline | Build, test and deploy stages |
 
 Each template has two actions:
-- **View** — opens the YAML for editing
-- **Deploy** — creates the pipeline and unpauses it in one click
 
-### Editor Integration
+| Action | Icon | Description |
+|--------|------|-------------|
+| View | 📄 | Opens the YAML for editing |
+| Deploy | 🚀 | Creates the pipeline and unpauses it |
 
-- **Set Pipeline button** — appears in the editor toolbar when a YAML file is open
-- **New Pipeline from Template** — available in the editor toolbar and command palette
+---
 
-### Status Bar
+### 📝 Editor Integration
+
+| Button | When | Description |
+|--------|------|-------------|
+| Set Pipeline | YAML file is open | Deploy the current file as a pipeline |
+| New Template | Always visible | Open a pipeline template |
+
+---
+
+### 📊 Status Bar
 
 Shows the current fly target at the bottom of the window. Click to log in.
 
-### Auto-refresh
+### 🔄 Auto-refresh
 
 Pipelines and builds refresh automatically every 30 seconds.
+
+---
 
 ## Requirements
 
 - [fly CLI](https://concourse-ci.org) installed
 - A running Concourse instance
 
+---
+
 ## Setup
 
-1. Install the extension
-2. Open Command Palette (`Ctrl+Shift+P`) → `Concourse: Login`
-3. Select the fly binary on your machine
-4. Enter your Concourse URL, target name, username and password
-5. The sidebar will populate with your pipelines
+### Interactive Login
 
-Or configure manually in settings:
+1. Open Command Palette (`Ctrl+Shift+P`) → **Concourse: Login**
+2. Select the `fly` binary on your machine
+3. Enter your Concourse URL (e.g. `http://localhost:8080`)
+4. Enter a target name (e.g. `ci`)
+5. Enter username and password
+6. Choose TLS configuration:
+   - **Skip TLS verification** — for self-signed certs or local dev
+   - **Use custom CA certificate** — select your `.pem` / `.crt` file
+   - **Default TLS** — no extra config needed
+
+### Manual Configuration
+
+Add to your VS Code / Kiro settings:
 
 ```json
 {
   "concourse.target": "ci",
   "concourse.url": "http://localhost:8080",
-  "concourse.flyPath": "C:\\concourse\\fly.exe"
+  "concourse.flyPath": "C:\\concourse\\fly.exe",
+  "concourse.skipTls": false,
+  "concourse.caCert": ""
 }
 ```
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| `concourse.target` | Fly target name | `""` |
+| `concourse.url` | Concourse URL | `""` |
+| `concourse.flyPath` | Path to fly binary | `"fly"` |
+| `concourse.skipTls` | Skip TLS verification | `false` |
+| `concourse.caCert` | Path to CA certificate | `""` |
+
+---
 
 ## Commands
 
 | Command | Description |
-|---|---|
+|---------|-------------|
 | `Concourse: Login` | Authenticate with a Concourse instance |
 | `Concourse: Set Pipeline` | Deploy the current YAML file as a pipeline |
 | `Concourse: Trigger Job` | Start a job |
@@ -84,33 +137,7 @@ Or configure manually in settings:
 | `Concourse: Deploy Template` | Deploy a template directly to Concourse |
 | `Concourse: Refresh` | Refresh pipelines and builds |
 
-## Inline Actions
-
-### Pipelines
-| Icon | Action |
-|---|---|
-| $(eye) | View pipeline YAML |
-| $(debug-pause) | Pause pipeline |
-| $(debug-start) | Unpause pipeline |
-
-### Jobs
-| Icon | Action |
-|---|---|
-| $(play) | Trigger job |
-| $(terminal) | Intercept (shell into container) |
-| $(eye) | View job YAML |
-
-### Builds
-| Icon | Action |
-|---|---|
-| $(output) | View build logs |
-| $(terminal) | Intercept (shell into container) |
-
-### Templates
-| Icon | Action |
-|---|---|
-| $(new-file) | View template YAML |
-| $(rocket) | Deploy template to Concourse |
+---
 
 ## License
 

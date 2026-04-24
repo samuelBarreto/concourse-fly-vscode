@@ -52,8 +52,38 @@ export function registerCommands(
 
       if (!username || !password) { return; }
 
+      const tlsOption = await vscode.window.showQuickPick(
+        ["No", "Yes"],
+        { placeHolder: "Skip TLS verification?" }
+      );
+
+      if (!tlsOption) { return; }
+
+      const skipTls = tlsOption === "Yes";
+      let caCert: string | undefined;
+
+      if (!skipTls) {
+        const useCaCert = await vscode.window.showQuickPick(
+          ["No", "Yes"],
+          { placeHolder: "Use custom CA certificate?" }
+        );
+
+        if (useCaCert === "Yes") {
+          const picked = await vscode.window.showOpenDialog({
+            canSelectFiles: true,
+            canSelectFolders: false,
+            canSelectMany: false,
+            title: "Select CA certificate file",
+            filters: { "Certificate": ["pem", "crt", "cert", "*"] },
+          });
+          if (picked && picked.length > 0) {
+            caCert = picked[0].fsPath;
+          }
+        }
+      }
+
       try {
-        await fly.login(url, username, password);
+        await fly.login(url, username, password, skipTls, caCert);
         vscode.window.showInformationMessage(`Logged in to ${url} as ${username}`);
         refreshAll();
       } catch (error: any) {
