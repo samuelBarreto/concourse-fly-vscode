@@ -155,11 +155,21 @@ export function registerCommands(
       }
     }),
 
-    vscode.commands.registerCommand("concourse.setPipeline", async () => {
-      const editor = vscode.window.activeTextEditor;
-      if (!editor) {
-        vscode.window.showWarningMessage("Open a pipeline YAML file first");
-        return;
+    vscode.commands.registerCommand("concourse.setPipeline", async (uri?: vscode.Uri) => {
+      let filePath: string;
+      let defaultName: string;
+
+      if (uri) {
+        filePath = uri.fsPath;
+        defaultName = path.basename(filePath, path.extname(filePath));
+      } else {
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+          vscode.window.showWarningMessage("Open a pipeline YAML file first");
+          return;
+        }
+        filePath = editor.document.fileName;
+        defaultName = path.basename(filePath, path.extname(filePath));
       }
 
       const teams = getTeams(context);
@@ -174,8 +184,6 @@ export function registerCommands(
       );
       if (!picked) { return; }
 
-      const filePath = editor.document.fileName;
-      const defaultName = path.basename(filePath, path.extname(filePath));
       const name = await vscode.window.showInputBox({
         prompt: "Pipeline name",
         placeHolder: defaultName,

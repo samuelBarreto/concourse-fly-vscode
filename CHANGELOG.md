@@ -2,6 +2,17 @@
 
 All notable changes to the Concourse Fly Integration extension.
 
+## [0.4.0] - 2026-04-24
+
+### Added
+- Quick Actions panel in the sidebar with all common actions in one place
+- Right-click context menu on YAML files (editor and explorer)
+- Right-click context menu options: Set Pipeline, Quick Deploy, Diff, New Template
+- Set Pipeline now accepts file URI from explorer context menu
+
+### Changed
+- Set Pipeline works from both editor and file explorer right-click
+
 ## [0.3.0] - 2026-04-24
 
 ### Added

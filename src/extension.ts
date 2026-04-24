@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { PipelineProvider, BuildProvider } from "./providers/treeView";
 import { TemplateProvider, PipelineTemplate } from "./providers/templates";
 import { PipelineCodeLensProvider } from "./providers/codeLens";
+import { ActionsProvider } from "./providers/actions";
 import { registerCommands } from "./commands";
 
 export function activate(context: vscode.ExtensionContext) {
@@ -9,10 +10,12 @@ export function activate(context: vscode.ExtensionContext) {
   const buildProvider = new BuildProvider(context);
   const templateProvider = new TemplateProvider();
   const codeLensProvider = new PipelineCodeLensProvider(context);
+  const actionsProvider = new ActionsProvider();
 
   vscode.window.registerTreeDataProvider("concoursePipelines", pipelineProvider);
   vscode.window.registerTreeDataProvider("concourseBuilds", buildProvider);
   vscode.window.registerTreeDataProvider("concourseTemplates", templateProvider);
+  vscode.window.registerTreeDataProvider("concourseActions", actionsProvider);
 
   context.subscriptions.push(
     vscode.languages.registerCodeLensProvider(

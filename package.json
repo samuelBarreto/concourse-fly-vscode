@@ -2,7 +2,7 @@
   "name": "concourse-fly",
   "displayName": "Concourse Fly Integration",
   "description": "Manage Concourse CI directly from VS Code. Browse pipelines and jobs, trigger builds, view logs, intercept containers, deploy pipeline templates — all without leaving your editor. Powered by the fly CLI.",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "publisher": "Concourse-Cli",
   "engines": {
     "vscode": "^1.85.0"
@@ -38,6 +38,10 @@
         {
           "id": "concourseTemplates",
           "name": "Templates"
+        },
+        {
+          "id": "concourseActions",
+          "name": "Quick Actions"
         }
       ]
     },
@@ -217,6 +221,48 @@
           "command": "concourse.deployTemplate",
           "when": "viewItem == template",
           "group": "inline"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "concourse.setPipeline",
+          "when": "resourceLangId == yaml",
+          "group": "concourse@1"
+        },
+        {
+          "command": "concourse.quickDeploy",
+          "when": "resourceLangId == yaml",
+          "group": "concourse@2"
+        },
+        {
+          "command": "concourse.diffPipeline",
+          "when": "resourceLangId == yaml",
+          "group": "concourse@3"
+        },
+        {
+          "command": "concourse.newPipeline",
+          "group": "concourse@4"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "concourse.setPipeline",
+          "when": "resourceLangId == yaml",
+          "group": "concourse@1"
+        },
+        {
+          "command": "concourse.quickDeploy",
+          "when": "resourceLangId == yaml",
+          "group": "concourse@2"
+        },
+        {
+          "command": "concourse.diffPipeline",
+          "when": "resourceLangId == yaml",
+          "group": "concourse@3"
+        },
+        {
+          "command": "concourse.newPipeline",
+          "group": "concourse@4"
         }
       ]
     },

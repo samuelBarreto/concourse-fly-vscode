@@ -19,41 +19,57 @@ Pipelines
 ├── 🏢 dev-team (ci)                [🚪 Logout]
 │   └── staging
 └── ➕ Add Team...
-
-Recent Builds
-├── 🏢 main (ci)
-│   ├── #5 hello/hello ✅
-│   └── #4 hello/hello ❌
-└── 🏢 dev-team (ci)
-    └── #3 staging/deploy ✅
 ```
 
-### � Smart Deploy with CodeLens
+### 🔮 Smart Deploy with CodeLens
 
 YAML files that look like Concourse pipelines get inline CodeLens actions:
 
 **First deploy:**
 ```yaml
-▶ Deploy "hello" to Concourse          ← picks team, uses filename as pipeline name
+▶ Deploy "hello" to Concourse
 
 jobs:
 - name: hello
-  ...
 ```
 
 **After first deploy:**
 ```yaml
-🚀 Deploy "hello" to main (ci)         ← one-click redeploy to same target
-📊 Diff with Concourse                  ← side-by-side diff (local vs remote)
+🚀 Deploy "hello" to main (ci)
+📊 Diff with Concourse
 
 jobs:
 - name: hello
-  ...
 ```
 
-- Pipeline name is auto-detected from the filename (`hello.yml` → `hello`)
-- Remembers the last team and target for each file
-- Diff shows what changed before you apply
+- Pipeline name auto-detected from filename
+- Remembers last team and target for each file
+- Diff shows local vs remote side-by-side
+
+### ⚡ Quick Actions Panel
+
+All common actions in one place in the sidebar:
+
+```
+Quick Actions
+├── 🔑 Login / Add Team
+├── 🚪 Logout / Remove Team
+├── ☁️  Set Pipeline
+├── 🚀 Quick Deploy
+├── 📊 Diff with Concourse
+├── 📄 New Pipeline from Template
+├── ▶  Trigger Job
+└── 🔄 Refresh
+```
+
+### 🖱️ Right-Click Context Menu
+
+Right-click on any YAML file (in editor or explorer):
+
+- **Set Pipeline** — deploy to a team
+- **Quick Deploy** — redeploy to last target
+- **Diff with Concourse** — compare local vs remote
+- **New Pipeline from Template** — create from template
 
 ### 🔧 Sidebar Panel
 
@@ -61,57 +77,43 @@ jobs:
 
 | Action | Icon | Description |
 |--------|------|-------------|
-| View YAML | 👁 | Fetch and save pipeline config to workspace |
+| View YAML | 👁 | Save pipeline config to workspace |
 | Pause | ⏸ | Pause a running pipeline |
 | Unpause | ▶ | Unpause a paused pipeline |
-| Logout | 🚪 | Remove team from sidebar |
+| Logout | 🚪 | Remove team |
 
 #### Jobs
 
 | Action | Icon | Description |
 |--------|------|-------------|
 | Trigger | ▶ | Start the job |
-| Intercept | >_ | Open a shell inside the job's container |
+| Intercept | >_ | Shell into the container |
 | View YAML | 👁 | Save job config to workspace |
 
 #### Recent Builds (grouped by team)
 
 | Action | Icon | Description |
 |--------|------|-------------|
-| View Logs | 📋 | Open build output in the editor |
-| Intercept | >_ | Open a shell inside the build's container |
+| View Logs | 📋 | Open build output |
+| Intercept | >_ | Shell into the container |
 
 #### Templates
 
 | Template | Description |
 |----------|-------------|
-| Hello World | Simple job that prints hello world |
-| Git Resource | Clone a repo and run tests |
-| Time Triggered | Job that runs on a schedule |
-| Docker Build | Build and push a Docker image |
-| Multi-Job Pipeline | Build, test and deploy stages |
-
-| Action | Icon | Description |
-|--------|------|-------------|
-| View | 📄 | Save template to workspace |
-| Deploy | 🚀 | Select team, creates pipeline and unpauses it |
-
----
-
-### 📝 Editor Integration
-
-| Button | When | Description |
-|--------|------|-------------|
-| Set Pipeline | YAML file is open | Select team and deploy |
-| New Template | Always visible | Open a pipeline template |
+| Hello World | Simple hello world job |
+| Git Resource | Clone repo and run tests |
+| Time Triggered | Scheduled job |
+| Docker Build | Build and push image |
+| Multi-Job Pipeline | Build, test and deploy |
 
 ### 📊 Status Bar
 
-Shows the number of connected teams. Click to add a new team.
+Shows connected teams count. Click to add a new team.
 
 ### 🔄 Auto-refresh
 
-Pipelines and builds refresh automatically every 30 seconds.
+Updates every 30 seconds.
 
 ---
 
@@ -126,25 +128,17 @@ Pipelines and builds refresh automatically every 30 seconds.
 
 ### Adding a Team
 
-1. Open Command Palette (`Ctrl+Shift+P`) → **Concourse: Login**
-2. Select the `fly` binary on your machine (first time only)
-3. Choose login method:
-   - **🌐 Browser login** — for OAuth/SSO authentication
-   - **🔑 Username & Password** — for local user credentials
-4. Enter your Concourse URL
-5. Enter a target name
-6. Choose TLS configuration:
-   - **No** — default TLS verification
-   - **Yes (insecure)** — skip TLS for self-signed certs
-7. Optionally select a custom CA certificate
-8. Enter team name
-9. Enter credentials (if using basic auth)
-
-Repeat for each team.
+1. Command Palette → **Concourse: Login** (or click in Quick Actions)
+2. Select fly binary (first time only)
+3. Choose: **Browser login** or **Username & Password**
+4. Enter Concourse URL, target name
+5. TLS: skip verification or select CA certificate
+6. Enter team name
+7. Enter credentials (if basic auth)
 
 ### Removing a Team
 
-Click 🚪 next to the team name, or Command Palette → **Concourse: Logout**.
+Click 🚪 next to team name, or Quick Actions → Logout.
 
 ### Manual Configuration
 
@@ -165,19 +159,19 @@ Click 🚪 next to the team name, or Command Palette → **Concourse: Logout**.
 |---------|-------------|
 | `Concourse: Login` | Add a new team |
 | `Concourse: Logout` | Remove a team |
-| `Concourse: Set Pipeline` | Deploy current YAML (picks team, auto-names pipeline) |
-| `Concourse: Quick Deploy` | Redeploy to last used team (one click) |
-| `Concourse: Diff with Concourse` | Side-by-side diff of local vs remote pipeline |
+| `Concourse: Set Pipeline` | Deploy YAML (auto-names from filename) |
+| `Concourse: Quick Deploy` | Redeploy to last target (one click) |
+| `Concourse: Diff with Concourse` | Side-by-side diff local vs remote |
 | `Concourse: Trigger Job` | Start a job |
 | `Concourse: Pause Pipeline` | Pause a pipeline |
 | `Concourse: Unpause Pipeline` | Unpause a pipeline |
 | `Concourse: View Build Logs` | Open build output |
-| `Concourse: View Pipeline YAML` | Save pipeline config to workspace |
-| `Concourse: View Job YAML` | Save job config to workspace |
-| `Concourse: Intercept Build` | Shell into a build's container |
-| `Concourse: Intercept Job` | Shell into a job's container |
+| `Concourse: View Pipeline YAML` | Save pipeline config |
+| `Concourse: View Job YAML` | Save job config |
+| `Concourse: Intercept Build` | Shell into build container |
+| `Concourse: Intercept Job` | Shell into job container |
 | `Concourse: New Pipeline from Template` | Create from template |
-| `Concourse: Deploy Template` | Deploy template to a team |
+| `Concourse: Deploy Template` | Deploy template to team |
 | `Concourse: Refresh` | Refresh all data |
 
 ---
