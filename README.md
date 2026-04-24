@@ -11,6 +11,7 @@ Manage Concourse CI directly from VS Code. Browse pipelines and jobs, trigger bu
 Three views in the Concourse activity bar:
 
 #### Pipelines
+
 Browse all pipelines and their jobs with inline actions:
 
 | Action | Icon | Description |
@@ -28,6 +29,7 @@ Browse all pipelines and their jobs with inline actions:
 | View YAML | 👁 | View the job config in isolation |
 
 #### Recent Builds
+
 Last 25 builds across all pipelines:
 
 | Action | Icon | Description |
@@ -36,6 +38,7 @@ Last 25 builds across all pipelines:
 | Intercept | >_ | Open a shell inside the build's container |
 
 #### Templates
+
 Ready-to-use pipeline templates:
 
 | Template | Description |
@@ -94,9 +97,14 @@ Pipelines and builds refresh automatically every 30 seconds.
 5. Enter a target name (e.g. `ci`)
 6. Choose TLS configuration:
    - **No** — default TLS verification
-   - **Yes (insecure, skip TLS verification)** — for self-signed certs or local dev (`-k --insecure`)
+   - **Yes (insecure, skip TLS verification)** — for self-signed certs or local dev
 7. If TLS is not skipped, optionally select a custom CA certificate (`.pem` / `.crt`)
-8. If using Username & Password, enter your credentials
+8. Enter team name (leave empty for default `main`)
+9. If using Username & Password, enter your credentials
+
+### Logout
+
+Open Command Palette (`Ctrl+Shift+P`) → **Concourse: Logout** or click the sign-out icon in the Pipelines panel.
 
 ### Manual Configuration
 
@@ -126,7 +134,8 @@ Add to your VS Code / Kiro settings:
 
 | Command | Description |
 |---------|-------------|
-| `Concourse: Login` | Authenticate with a Concourse instance |
+| `Concourse: Login` | Authenticate with a Concourse instance (browser or basic) |
+| `Concourse: Logout` | Log out from the current target |
 | `Concourse: Set Pipeline` | Deploy the current YAML file as a pipeline |
 | `Concourse: Trigger Job` | Start a job |
 | `Concourse: Pause Pipeline` | Pause a pipeline |

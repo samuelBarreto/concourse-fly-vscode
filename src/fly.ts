@@ -57,7 +57,7 @@ function exec(args: string[]): Promise<string> {
   });
 }
 
-export async function login(url: string, username: string, password: string, skipTls?: boolean, caCert?: string): Promise<string> {
+export async function login(url: string, username: string, password: string, skipTls?: boolean, caCert?: string, team?: string): Promise<string> {
   const flyPath = getFlyPath();
   const target = getTarget();
 
@@ -67,6 +67,9 @@ export async function login(url: string, username: string, password: string, ski
   }
   if (caCert) {
     args.push("--ca-cert", caCert);
+  }
+  if (team) {
+    args.push("-n", team);
   }
 
   return new Promise((resolve, reject) => {
@@ -84,7 +87,7 @@ export async function login(url: string, username: string, password: string, ski
   });
 }
 
-export function loginBrowserArgs(url: string, skipTls?: boolean, caCert?: string): string[] {
+export function loginBrowserArgs(url: string, skipTls?: boolean, caCert?: string, team?: string): string[] {
   const flyPath = getFlyPath();
   const target = getTarget();
   const args = [flyPath, "-t", target, "login", "-c", url];
@@ -94,7 +97,14 @@ export function loginBrowserArgs(url: string, skipTls?: boolean, caCert?: string
   if (caCert) {
     args.push("--ca-cert", caCert);
   }
+  if (team) {
+    args.push("-n", team);
+  }
   return args;
+}
+
+export async function logout(): Promise<string> {
+  return exec(["logout"]);
 }
 
 export async function getPipelines(): Promise<Pipeline[]> {

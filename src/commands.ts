@@ -94,21 +94,30 @@ export function registerCommands(
 
       // 6. Execute login
       if (loginMethod.value === "browser") {
-        const args = fly.loginBrowserArgs(url, skipTls, caCert);
+        const team = await vscode.window.showInputBox({
+          prompt: "Team name (leave empty for default 'main')",
+          placeHolder: "main",
+        });
+
+        const args = fly.loginBrowserArgs(url, skipTls, caCert, team || undefined);
         const terminal = vscode.window.createTerminal("Concourse Login");
         terminal.show();
         terminal.sendText(args.join(" "));
         vscode.window.showInformationMessage("Complete the login in your browser, then the terminal will confirm.");
-        // Refresh after a delay to give time for browser login
         setTimeout(refreshAll, 10000);
       } else {
+        const team = await vscode.window.showInputBox({
+          prompt: "Team name (leave empty for default 'main')",
+          placeHolder: "main",
+        });
+
         const username = await vscode.window.showInputBox({ prompt: "Username" }) || "";
         const password = await vscode.window.showInputBox({ prompt: "Password", password: true }) || "";
 
         if (!username || !password) { return; }
 
         try {
-          await fly.login(url, username, password, skipTls, caCert);
+          await fly.login(url, username, password, skipTls, caCert, team || undefined);
           vscode.window.showInformationMessage(`Logged in to ${url} as ${username}`);
           refreshAll();
         } catch (error: any) {
@@ -208,6 +217,16 @@ export function registerCommands(
 
     vscode.commands.registerCommand("concourse.refresh", () => {
       refreshAll();
+    }),
+
+    vscode.commands.registerCommand("concourse.logout", async () => {
+      try {
+        await fly.logout();
+        vscode.window.showInformationMessage("Logged out from Concourse");
+        refreshAll();
+      } catch (error: any) {
+        vscode.window.showErrorMessage(`Logout failed: ${error.message}`);
+      }
     }),
 
     vscode.commands.registerCommand("concourse.viewPipelineYaml", async (item?: PipelineTreeItem) => {

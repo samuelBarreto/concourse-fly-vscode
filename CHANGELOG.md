@@ -2,6 +2,16 @@
 
 All notable changes to the Concourse Fly Integration extension.
 
+## [0.1.6] - 2026-04-23
+
+### Added
+- Team name field during login (both browser and basic auth)
+- Logout command (`Concourse: Logout`)
+- Logout button (sign-out icon) in the Pipelines panel toolbar
+
+### Changed
+- Login flow now asks for team name before credentials
+
 ## [0.1.5] - 2026-04-23
 
 ### Added
