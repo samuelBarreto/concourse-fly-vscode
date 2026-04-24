@@ -2,7 +2,7 @@
   "name": "concourse-fly",
   "displayName": "Concourse Fly Integration",
   "description": "Manage Concourse CI directly from VS Code. Browse pipelines and jobs, trigger builds, view logs, intercept containers, deploy pipeline templates — all without leaving your editor. Powered by the fly CLI.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "publisher": "Concourse-Cli",
   "engines": {
     "vscode": "^1.85.0"

@@ -53,13 +53,13 @@ export function registerCommands(
       if (!username || !password) { return; }
 
       const tlsOption = await vscode.window.showQuickPick(
-        ["No", "Yes"],
+        ["No", "Yes (insecure, skip TLS verification)"],
         { placeHolder: "Skip TLS verification?" }
       );
 
       if (!tlsOption) { return; }
 
-      const skipTls = tlsOption === "Yes";
+      const skipTls = tlsOption.startsWith("Yes");
       let caCert: string | undefined;
 
       if (!skipTls) {

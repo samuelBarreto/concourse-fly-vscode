@@ -91,9 +91,9 @@ Pipelines and builds refresh automatically every 30 seconds.
 4. Enter a target name (e.g. `ci`)
 5. Enter username and password
 6. Choose TLS configuration:
-   - **Skip TLS verification** — for self-signed certs or local dev
-   - **Use custom CA certificate** — select your `.pem` / `.crt` file
-   - **Default TLS** — no extra config needed
+   - **No** — default TLS verification
+   - **Yes (insecure, skip TLS verification)** — for self-signed certs or local dev (`-k --insecure`)
+7. If TLS is not skipped, optionally select a custom CA certificate (`.pem` / `.crt`)
 
 ### Manual Configuration
 

@@ -63,7 +63,7 @@ export async function login(url: string, username: string, password: string, ski
 
   const args = ["-t", target, "login", "-c", url, "-u", username, "-p", password];
   if (skipTls) {
-    args.push("-k");
+    args.push("-k", "--insecure");
   }
   if (caCert) {
     args.push("--ca-cert", caCert);
